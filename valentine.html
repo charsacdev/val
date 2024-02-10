@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Surprise</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: pink;
+            font-family: 'Arial', sans-serif;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #valentine-key-form {
+            text-align: center;
+            position: absolute;
+            z-index: 1;
+            background-color: pink;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #valentine-key-form p {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+
+        #key-input {
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        #submit-button {
+            padding: 10px;
+            font-size: 16px;
+            background-color: pink; /* Set button background color to pink */
+            border: 2px solid white; /* Set button border to white */
+            color: black; /* Set button text color to black */
+            cursor: pointer;
+        }
+
+        #trial-message {
+            margin-top: 10px;
+            font-size: 14px;
+            color: red;
+        }
+
+        #valentine-text {
+            position: absolute;
+            font-size: 24px;
+            text-align: center;
+            animation: pulse 2s infinite;
+            display: none;
+            margin:20px 0px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        #picture-space {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+
+        #picture-space img {
+            width: 220px;
+            height: 250px;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="fireworks"></canvas>
+    <div id="valentine-key-form">
+        <p style="color:black">❤️ Enter the key to my heart ❤️</p>
+        <input style="border:0px;outline:0px;" type="password" id="key-input" required placeholder="Key" onclick="this.focus();" onkeyup="enableSubmitButton()">
+        <br><br> 
+        <!-- Line break to move the button to a new line -->
+        <button id="submit-button" onclick="checkKey()" disabled>Submit</button>
+        <p id="trial-message"></p>
+    </div>
+    <div id="picture-space">
+        <!-- You can add pictures here dynamically using JavaScript -->
+        <img src="image.jpg">
+    </div>
+    <br><br><br>
+    <div id="valentine-text">❤️ I love you so much! ❤️</div>
+
+   
+
+    <script>
+        // Get the canvas element and its drawing context
+        const canvas = document.getElementById('fireworks');
+        const ctx = canvas.getContext('2d');
+
+        // Set the canvas size to full screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Additional code for the key validation
+        const correctKey = "bigkala"; // Change this to your desired key
+        let trials = 3;
+
+        function enableSubmitButton() {
+            document.getElementById('submit-button').disabled = false;
+        }
+
+        function checkKey() {
+            const userInput = document.getElementById('key-input').value;
+
+            if (userInput === correctKey) {
+                document.getElementById('valentine-key-form').style.display = 'none';
+                document.getElementById('valentine-text').style.display = 'block';
+                document.getElementById('picture-space').style.display = 'flex'; // Display the picture space
+                animate();
+            } else {
+                trials--;
+
+                if (trials > 0) {
+                    document.getElementById('trial-message').innerText = `Wrong key! ${trials} trials left.`;
+                } else {
+                    document.getElementById('valentine-key-form').style.display = 'none';
+                    document.getElementById('valentine-text').innerText = "Access denied. Try again later. ❤️";
+                    document.getElementById('valentine-text').style.display = 'block';
+                }
+            }
+        }
+
+        // Fireworks animation code
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                // Random initial velocity
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 8,
+                    y: (Math.random() - 0.5) * 8
+                };
+                this.alpha = 1; // Opacity of the particle
+                this.friction = 0.99; // Friction to slow down particles
+            }
+
+            // Draw a particle on the canvas
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            // Update the particle position and opacity
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.01; // Fade out the particle
+            }
+        }
+
+        class Firework {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                // Initial upward velocity
+                this.velocity = { x: 0, y: Math.random() * -2.5 - 0.5 };
+                this.particles = []; // Particles for explosion
+                this.lifespan = 180; // Time before explosion
+                this.hasExploded = false; // Track if the firework has exploded
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            explode() {
+                for (let i = 0; i < 50; i++) {
+                    this.particles.push(new Particle(this.x, this.y, this.color));
+                }
+            }
+
+            update() {
+                this.lifespan--;
+
+                if (this.lifespan <= 0 && !this.hasExploded) {
+                    this.explode();
+                    this.velocity = { x: 0, y: 0 };
+                    this.hasExploded = true;
+                } else if (this.lifespan > 0) {
+                    this.y += this.velocity.y;
+                }
+
+                this.particles.forEach((particle, index) => {
+                    particle.update();
+                    particle.draw();
+                    if (particle.alpha <= 0) {
+                        this.particles.splice(index, 1);
+                    }
+                });
+            }
+        }
+
+        const fireworks = [];
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            fireworks.forEach((firework, index) => {
+                firework.update();
+                firework.draw();
+                if (firework.lifespan <= 0 && firework.particles.length === 0) {
+                    fireworks.splice(index, 1);
+                }
+            });
+
+            if (Math.random() < 0.015) {
+                const x = Math.random() * canvas.width;
+                const color = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                fireworks.push(new Firework(x, canvas.height, color));
+            }
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
